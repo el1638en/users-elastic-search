@@ -186,74 +186,74 @@ Spring Data Elasticsearch, intégré à Spring Data, permet d'effectuer des opé
           }
       ```
 
-    4. Configuration des informations d'accès au serveur Elasticsearch (IP, Port, etc...).
+  4. Configuration des informations d'accès au serveur Elasticsearch (IP, Port, etc...).
 
       - fichier `src/main/resources/application.properties`
 
-      ```
-          spring.data.elasticsearch.repositories.enabled=true
-          spring.main.allow-bean-definition-overriding=true
-          elasticsearch.cluster.name=my-application
-          elasticsearch.host=127.0.0.1
-          elasticsearch.port=9300
-      ```
+        ```
+            spring.data.elasticsearch.repositories.enabled=true
+            spring.main.allow-bean-definition-overriding=true
+            elasticsearch.cluster.name=my-application
+            elasticsearch.host=127.0.0.1
+            elasticsearch.port=9300
+        ```
 
       - Configuration SpringBoot de connexion à Elasticsearch
 
-      ```java
-          package com.syscom.config;
+        ```java
+            package com.syscom.config;
 
-          import java.net.InetAddress;
-          import java.net.UnknownHostException;
-          import org.elasticsearch.client.Client;
-          import org.elasticsearch.client.transport.TransportClient;
-          import org.elasticsearch.common.settings.Settings;
-          import org.elasticsearch.common.transport.TransportAddress;
-          import org.elasticsearch.transport.client.PreBuiltTransportClient;
-          import org.springframework.beans.factory.annotation.Value;
-          import org.springframework.context.annotation.Bean;
-          import org.springframework.context.annotation.ComponentScan;
-          import org.springframework.context.annotation.Configuration;
-          import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-          import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
-          import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
+            import java.net.InetAddress;
+            import java.net.UnknownHostException;
+            import org.elasticsearch.client.Client;
+            import org.elasticsearch.client.transport.TransportClient;
+            import org.elasticsearch.common.settings.Settings;
+            import org.elasticsearch.common.transport.TransportAddress;
+            import org.elasticsearch.transport.client.PreBuiltTransportClient;
+            import org.springframework.beans.factory.annotation.Value;
+            import org.springframework.context.annotation.Bean;
+            import org.springframework.context.annotation.ComponentScan;
+            import org.springframework.context.annotation.Configuration;
+            import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+            import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+            import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
-          @Configuration
-          @EnableElasticsearchRepositories(basePackages = "com.syscom.dao")
-          @ComponentScan(basePackages = { "com.syscom.service" })
-          public class ESConfig {
-            private final Logger logger = LoggerFactory.getLogger(ESConfig.class);
-            @Value("${elasticsearch.host}")
-            private String esHost;
+            @Configuration
+            @EnableElasticsearchRepositories(basePackages = "com.syscom.dao")
+            @ComponentScan(basePackages = { "com.syscom.service" })
+            public class ESConfig {
+              private final Logger logger = LoggerFactory.getLogger(ESConfig.class);
+              @Value("${elasticsearch.host}")
+              private String esHost;
 
-            @Value("${elasticsearch.port}")
-            private int esPort;
+              @Value("${elasticsearch.port}")
+              private int esPort;
 
-            @Value("${elasticsearch.cluster.name}")
-            private String esClusterName;
+              @Value("${elasticsearch.cluster.name}")
+              private String esClusterName;
+
+              @Bean
+              public Client client() {
+                TransportClient client = null;
+                try {
+                  final Settings elasticSearchSettings = Settings.builder()
+                      .put("client.transport.sniff", true)
+                      .put("cluster.name", esClusterName)
+                      .build();
+                  client = new PreBuiltTransportClient(elasticSearchSettings);
+                  client.addTransportAddress(new TransportAddress(InetAddress.getByName(esHost), esPort));
+                } catch (UnknownHostException e) {
+                  logger.error("Erreur de la connexion au serveur Elastic Search {}:{}",esHost, esPort, unknownHostException);
+                }
+                return client;
+              }
 
             @Bean
-            public Client client() {
-              TransportClient client = null;
-              try {
-                final Settings elasticSearchSettings = Settings.builder()
-                    .put("client.transport.sniff", true)
-                    .put("cluster.name", esClusterName)
-                    .build();
-                client = new PreBuiltTransportClient(elasticSearchSettings);
-                client.addTransportAddress(new TransportAddress(InetAddress.getByName(esHost), esPort));
-              } catch (UnknownHostException e) {
-                logger.error("Erreur de la connexion au serveur Elastic Search {}:{}",esHost, esPort, unknownHostException);
-              }
-              return client;
+            public ElasticsearchOperations elasticsearchTemplate() {
+              return new ElasticsearchTemplate(client());
             }
-
-          @Bean
-          public ElasticsearchOperations elasticsearchTemplate() {
-            return new ElasticsearchTemplate(client());
           }
-        }
-      ```
+        ```
 
     5. Le controller REST de l'API
 
@@ -310,7 +310,7 @@ Spring Data Elasticsearch, intégré à Spring Data, permet d'effectuer des opé
           	public List<User> getAll() {
           		return StreamSupport.stream(userESService.findAll().spliterator(), false).collect(Collectors.toList());
           	}
-        }
+          }
       ```
 
 Le code source de l'exemple est [ici](https://github.com/el1638en/users-elastic-search).
