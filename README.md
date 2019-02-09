@@ -255,7 +255,7 @@ Spring Data Elasticsearch, intégré à Spring Data, permet d'effectuer des opé
           }
         ```
 
-    5. Le controller REST de l'API
+  5. Le controller REST de l'API
 
       ```java
           @RestController
